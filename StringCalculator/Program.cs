@@ -10,27 +10,30 @@ namespace StringCalculator
             return value > 1000 ? 0 : value;
         }
 
-        public static int Add(string numbers)
+        public static int Add(string expression)
         {
             var delimiters = new List<string>() { "\n", "," };
-            var match = MyRegex().Match(numbers);
-            if (match.Success)
+            var matches = MyRegex().Matches(expression);
+            if (expression.StartsWith("//"))
             {
-                delimiters.AddRange(match.Groups["delimiter"].Captures.Select(capture => capture.Value));
-                numbers = numbers[match.Length..];
+                if (matches.Count > 0)
+                {
+                    delimiters.AddRange(matches.Select(match => match.Groups["delimiter"].Value));
+                    expression = expression[(expression.IndexOf("\n", StringComparison.Ordinal) + 1)..];
+                }
+                else 
+                {
+                    delimiters.Add(expression[2].ToString());
+                    expression = expression[4..];
+                }
             }
-            else if (numbers.StartsWith("//"))
-            {
-                delimiters.Add(numbers[2].ToString());
-                numbers = numbers[4..];
-            }
-            
-            var summands = numbers.Split(delimiters.ToArray(), StringSplitOptions.None);
 
-            return summands.Where(summand => summand != "").Sum(summand => ValidateNumber(int.Parse(summand)));
+            var numbers = expression.Split(delimiters.ToArray(), StringSplitOptions.None);
+
+            return numbers.Where(summand => summand != "").Sum(summand => ValidateNumber(int.Parse(summand)));
         }
 
-        [GeneratedRegex("^//(\\[(?<delimiter>.+)\\])+")]
+        [GeneratedRegex(@"\[(?<delimiter>.*?)\]", RegexOptions.Compiled)]
         private static partial Regex MyRegex();
     }
 
