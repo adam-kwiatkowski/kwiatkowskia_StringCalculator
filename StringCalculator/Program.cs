@@ -2,7 +2,7 @@
 
 namespace StringCalculator
 {
-    public static class Calculator
+    public static partial class Calculator
     {
         private static int ValidateNumber(int value)
         {
@@ -13,32 +13,25 @@ namespace StringCalculator
         public static int Add(string numbers)
         {
             var delimiters = new List<string>() { "\n", "," };
-            var sum = 0;
-            var number = string.Empty;
-            var parsingDelimiters = true;
-
-            if (numbers.Length <= 0) return sum;
-            foreach (var character in numbers)
+            var match = MyRegex().Match(numbers);
+            if (match.Success)
             {
-                if (parsingDelimiters)
-                {
-                    if (character == '\n') parsingDelimiters = false;
-                }
-                else
-                {
-                    if (char.IsDigit(character) || character == '-') number += character;
-                    else if (delimiters.Contains(character.ToString()))
-                    {
-                        sum += ValidateNumber(int.Parse(number));
-                        number = string.Empty;
-                    }
-                }
+                delimiters.AddRange(match.Groups["delimiter"].Captures.Select(capture => capture.Value));
+                numbers = numbers[match.Length..];
             }
+            else if (numbers.StartsWith("//"))
+            {
+                delimiters.Add(numbers[2].ToString());
+                numbers = numbers[4..];
+            }
+            
+            var summands = numbers.Split(delimiters.ToArray(), StringSplitOptions.None);
 
-            sum += ValidateNumber(int.Parse(number));
-
-            return sum;
+            return summands.Where(summand => summand != "").Sum(summand => ValidateNumber(int.Parse(summand)));
         }
+
+        [GeneratedRegex("^//(\\[(?<delimiter>.+)\\])+")]
+        private static partial Regex MyRegex();
     }
 
     internal static class Program
